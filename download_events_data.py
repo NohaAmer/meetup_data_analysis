@@ -8,22 +8,43 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pprint import pprint
 
-# client = meetup.api.Client()
-# client.api_key = '5f4d182652662a6844781035a77375f'
-# categories_obj = client.GetCategories()
-# categories = categories_obj.results
-# pprint(categories)
-# events = client.GetOpenEvents(False,category=1,status="past",page=100,offset=0)
-#
-# events_df = pd.DataFrame(events.results)
-# events_df.to_csv('test_events.csv',encoding='utf-8')
+def get_meetup_client():
+    client = meetup.api.Client()
+    client.api_key = '5f4d182652662a6844781035a77375f'
+    return client
 
-events_df = pd.read_csv('test_events.csv')
+def print_meetup_categories(client):
+    categories_obj = client.GetCategories()
+    categories = categories_obj.results
+    pprint(categories)
 
-events_array = events_df.as_matrix(columns=['duration','yes_rsvp_count'])
-kmeans = KMeans(n_clusters=10, random_state=0).fit(events_array)
+def get_open_events(client):
+    events = client.GetOpenEvents(False,category=1,status="past",page=100,offset=0)
+    events_df = pd.DataFrame(events.results)
+    events_df =events_df[np.isfinite(events_df['duration'])]
+    return events_df
 
-plt.plot(events_array)
-plt.show()
+def cluster (events_df):
+    events_array = events_df.as_matrix(columns=['duration','yes_rsvp_count'])
+    kmeans_result = KMeans(n_clusters=10, random_state=0).fit(events_array)
+    return events_array,kmeans_result
 
-pdb.set_trace()
+def plot_clusters(events_array):
+    plt.plot(events_array)
+    plt.show()
+
+def read_csv (file_name):
+    events_df.to_csv(file_name,encoding='utf-8')
+
+def write_csv (file_name):
+    events_df = pd.read_csv(file_name)
+
+def main():
+    client = get_meetup_client()
+    print_meetup_categories(client)
+    events_df = get_open_events(client)
+    events_array, kmeans = cluster(events_df)
+    plot_clusters(events_array)
+    pdb.set_trace()
+
+main()
